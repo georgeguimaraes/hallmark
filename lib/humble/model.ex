@@ -6,18 +6,21 @@ defmodule Humble.Model do
   @hhem_repo "vectara/hallucination_evaluation_model"
   @base_repo "google/flan-t5-base"
 
-  defstruct [:model, :params, :tokenizer, :classifier_weight, :classifier_bias]
+  defstruct [:model, :params, :tokenizer, :classifier_weight, :classifier_bias, :compiler]
 
   @type t :: %__MODULE__{
           model: Axon.t(),
           params: Axon.ModelState.t(),
           tokenizer: term(),
           classifier_weight: Nx.Tensor.t(),
-          classifier_bias: Nx.Tensor.t()
+          classifier_bias: Nx.Tensor.t(),
+          compiler: module() | nil
         }
 
   @doc false
-  def load do
+  def load(opts \\ []) do
+    compiler = Keyword.get(opts, :compiler)
+
     with {:ok, spec} <- Bumblebee.load_spec({:hf, @base_repo}, architecture: :encoder),
          model <- Bumblebee.build_model(spec),
          {:ok, tokenizer} <- Bumblebee.load_tokenizer({:hf, @base_repo}),
@@ -30,7 +33,8 @@ defmodule Humble.Model do
          params: params,
          tokenizer: tokenizer,
          classifier_weight: weight,
-         classifier_bias: bias
+         classifier_bias: bias,
+         compiler: compiler
        }}
     end
   end
@@ -50,7 +54,8 @@ defmodule Humble.Model do
       params: params,
       tokenizer: tokenizer,
       classifier_weight: weight,
-      classifier_bias: bias
+      classifier_bias: bias,
+      compiler: compiler
     } = model_data
 
     texts =
@@ -61,7 +66,8 @@ defmodule Humble.Model do
     configured_tokenizer = Bumblebee.configure(tokenizer, length: 512, pad_direction: :right)
     inputs = Bumblebee.apply_tokenizer(configured_tokenizer, texts)
 
-    %{hidden_state: hidden_state} = Axon.predict(model, params, inputs)
+    predict_opts = if compiler, do: [compiler: compiler], else: []
+    %{hidden_state: hidden_state} = Axon.predict(model, params, inputs, predict_opts)
 
     # Position 0 is the <pad> token, used as CLS for classification
     cls = hidden_state[[.., 0, ..]]
@@ -87,10 +93,10 @@ defmodule Humble.Model do
   defp load_encoder_params(spec, model, safetensors_path) do
     params_mapping = Bumblebee.HuggingFace.Transformers.Model.params_mapping(spec)
 
-    # HHEM prefixes all encoder weights with "transformer."
+    # HHEM prefixes all encoder weights with "t5.transformer."
     hhem_mapping =
       Map.new(params_mapping, fn {axon_name, pytorch_name} ->
-        {axon_name, "transformer.#{pytorch_name}"}
+        {axon_name, "t5.transformer.#{pytorch_name}"}
       end)
 
     input_template = Bumblebee.Text.T5.input_template(spec)
@@ -112,8 +118,8 @@ defmodule Humble.Model do
   defp load_classifier_weights(safetensors_path) do
     tensors = Safetensors.read!(safetensors_path)
 
-    weight = Map.get(tensors, "classifier.weight")
-    bias = Map.get(tensors, "classifier.bias")
+    weight = Map.get(tensors, "t5.classifier.weight")
+    bias = Map.get(tensors, "t5.classifier.bias")
 
     if weight && bias do
       {:ok, {weight, bias}}

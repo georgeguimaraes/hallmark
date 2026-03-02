@@ -17,7 +17,7 @@ defmodule Humble.ModelTest do
   ]
 
   setup_all do
-    {:ok, model} = Humble.load()
+    {:ok, model} = Humble.load(compiler: EXLA)
     %{model: model}
   end
 

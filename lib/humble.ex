@@ -15,12 +15,17 @@ defmodule Humble do
 
   Downloads from HuggingFace on first call, then uses cached files.
 
+  ## Options
+
+    * `:compiler` - Nx compiler for inference (e.g. `EXLA`). Without one, uses the
+      default Nx.Defn evaluator which is very slow for transformer models.
+
   ## Examples
 
-      {:ok, model} = Humble.load()
+      {:ok, model} = Humble.load(compiler: EXLA)
   """
-  def load do
-    Model.load()
+  def load(opts \\ []) do
+    Model.load(opts)
   end
 
   @doc """
