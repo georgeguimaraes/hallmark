@@ -1,7 +1,10 @@
 defmodule Hallmark.Model do
   @moduledoc false
 
+  alias Bumblebee.Conversion.PyTorchParams
   alias Bumblebee.HuggingFace.Hub
+  alias Bumblebee.HuggingFace.Transformers
+  alias Bumblebee.Text.T5
 
   @hhem_repo "vectara/hallucination_evaluation_model"
   @base_repo "google/flan-t5-base"
@@ -91,7 +94,7 @@ defmodule Hallmark.Model do
   end
 
   defp load_encoder_params(spec, model, safetensors_path) do
-    params_mapping = Bumblebee.HuggingFace.Transformers.Model.params_mapping(spec)
+    params_mapping = Transformers.Model.params_mapping(spec)
 
     # HHEM prefixes all encoder weights with "t5.transformer."
     hhem_mapping =
@@ -99,10 +102,10 @@ defmodule Hallmark.Model do
         {axon_name, "t5.transformer.#{pytorch_name}"}
       end)
 
-    input_template = Bumblebee.Text.T5.input_template(spec)
+    input_template = T5.input_template(spec)
 
     params =
-      Bumblebee.Conversion.PyTorchParams.load_params!(
+      PyTorchParams.load_params!(
         model,
         input_template,
         safetensors_path,
