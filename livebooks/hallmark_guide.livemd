@@ -1,0 +1,118 @@
+# Hallmark Guide
+
+```elixir
+Mix.install([
+  {:hallmark, "~> 0.1.0"},
+  {:exla, "~> 0.9"}
+])
+```
+
+## Loading the model
+
+Hallmark uses Vectara's HHEM (Hallucination Evaluation Model), a fine-tuned FLAN-T5-base that runs entirely locally. The first call downloads ~440MB of weights from HuggingFace, then everything is cached.
+
+```elixir
+{:ok, model} = Hallmark.load(compiler: EXLA)
+```
+
+## Scoring a single pair
+
+`score/3` takes a premise (source text) and a hypothesis (text to check), returning a float from 0.0 (hallucinated) to 1.0 (consistent).
+
+```elixir
+# The hypothesis follows from the premise
+{:ok, score} = Hallmark.score(model, "I am in California", "I am in United States.")
+IO.puts("Score: #{score}")
+```
+
+```elixir
+# The hypothesis contradicts the premise
+{:ok, score} =
+  Hallmark.score(
+    model,
+    "The capital of France is Berlin.",
+    "The capital of France is Paris."
+  )
+
+IO.puts("Score: #{score}")
+```
+
+## Getting a label
+
+If you just need a `:consistent` or `:hallucinated` verdict, use `evaluate/3`. The default threshold is 0.5.
+
+```elixir
+{:ok, label} = Hallmark.evaluate(model, "I am in California", "I am in United States.")
+IO.puts("Label: #{label}")
+```
+
+```elixir
+# You can set a stricter threshold
+{:ok, label} =
+  Hallmark.evaluate(
+    model,
+    "I am in California",
+    "I am in United States.",
+    threshold: 0.8
+  )
+
+IO.puts("Label with 0.8 threshold: #{label}")
+```
+
+## Batch scoring
+
+For multiple pairs at once, `score_batch/2` is more efficient than calling `score/3` in a loop since it runs a single forward pass through the model.
+
+```elixir
+pairs = [
+  {"I am in California", "I am in United States."},
+  {"I am in United States", "I am in California."},
+  {"A person on a horse jumps over a broken down airplane.", "A person is outdoors, on a horse."},
+  {"Mark Wahlberg was a fan of Manny.", "Manny was a fan of Mark Wahlberg."}
+]
+
+{:ok, scores} = Hallmark.score_batch(model, pairs)
+
+Enum.zip(pairs, scores)
+|> Enum.each(fn {{premise, hypothesis}, score} ->
+  label = if score >= 0.5, do: "consistent", else: "hallucinated"
+  IO.puts("#{label} (#{Float.round(score, 3)})")
+  IO.puts("  premise:    #{premise}")
+  IO.puts("  hypothesis: #{hypothesis}\n")
+end)
+```
+
+## Checking LLM output against source material
+
+The main use case: you have some source text and an LLM generated a response from it. Is the response actually grounded in the source?
+
+```elixir
+source = """
+Elixir is a dynamic, functional language for building scalable and maintainable applications.
+Elixir runs on the Erlang VM, known for creating low-latency, distributed, and fault-tolerant systems.
+"""
+
+# Grounded claim
+{:ok, score} = Hallmark.score(model, source, "Elixir is a functional programming language.")
+IO.puts("Grounded claim: #{Float.round(score, 3)}")
+
+# Hallucinated claim (not in the source)
+{:ok, score} = Hallmark.score(model, source, "Elixir was created by José Valim in 2011.")
+IO.puts("Hallucinated claim: #{Float.round(score, 3)}")
+```
+
+## Important: entailment, not factual accuracy
+
+Hallmark checks whether the hypothesis follows from the premise. It doesn't check if something is true in general. A factually correct statement can still be flagged as hallucinated if it's not supported by the given premise.
+
+```elixir
+premise = "The dog sat on the mat."
+
+# True in general but not stated in the premise
+{:ok, score} = Hallmark.score(model, premise, "Dogs are mammals.")
+IO.puts("'Dogs are mammals' score: #{Float.round(score, 3)}")
+
+# Actually follows from the premise
+{:ok, score} = Hallmark.score(model, premise, "An animal was on the mat.")
+IO.puts("'An animal was on the mat' score: #{Float.round(score, 3)}")
+```

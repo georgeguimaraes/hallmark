@@ -1,7 +1,7 @@
-defmodule HumbleTest do
+defmodule HallmarkTest do
   use ExUnit.Case
 
-  alias Humble.Model
+  alias Hallmark.Model
 
   describe "format_prompt/2" do
     test "formats premise and hypothesis into HHEM prompt" do

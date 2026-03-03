@@ -1,4 +1,4 @@
-defmodule Humble.Model do
+defmodule Hallmark.Model do
   @moduledoc false
 
   alias Bumblebee.HuggingFace.Hub

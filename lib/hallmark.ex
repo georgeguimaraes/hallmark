@@ -1,4 +1,4 @@
-defmodule Humble do
+defmodule Hallmark do
   @moduledoc """
   HHEM (Hallucination Evaluation Model) for Elixir.
 
@@ -6,7 +6,7 @@ defmodule Humble do
   using Vectara's HHEM model, a fine-tuned FLAN-T5-base.
   """
 
-  alias Humble.Model
+  alias Hallmark.Model
 
   @default_threshold 0.5
 
@@ -22,7 +22,7 @@ defmodule Humble do
 
   ## Examples
 
-      {:ok, model} = Humble.load(compiler: EXLA)
+      {:ok, model} = Hallmark.load(compiler: EXLA)
   """
   def load(opts \\ []) do
     Model.load(opts)
@@ -35,7 +35,7 @@ defmodule Humble do
 
   ## Examples
 
-      {:ok, score} = Humble.score(model, "I am in California", "I am in United States.")
+      {:ok, score} = Hallmark.score(model, "I am in California", "I am in United States.")
   """
   def score(%Model{} = model, premise, hypothesis) do
     Model.predict(model, premise, hypothesis)
@@ -46,7 +46,7 @@ defmodule Humble do
 
   ## Examples
 
-      {:ok, scores} = Humble.score_batch(model, [
+      {:ok, scores} = Hallmark.score_batch(model, [
         {"I am in California", "I am in United States."},
         {"The capital of France is Berlin.", "The capital of France is Paris."}
       ])
@@ -65,8 +65,8 @@ defmodule Humble do
 
   ## Examples
 
-      {:ok, :consistent} = Humble.evaluate(model, "I am in California", "I am in United States.")
-      {:ok, :hallucinated} = Humble.evaluate(model, "The capital of France is Berlin.", "The capital of France is Paris.")
+      {:ok, :consistent} = Hallmark.evaluate(model, "I am in California", "I am in United States.")
+      {:ok, :hallucinated} = Hallmark.evaluate(model, "The capital of France is Berlin.", "The capital of France is Paris.")
   """
   def evaluate(%Model{} = model, premise, hypothesis, opts \\ []) do
     threshold = Keyword.get(opts, :threshold, @default_threshold)

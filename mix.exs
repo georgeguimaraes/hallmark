@@ -1,17 +1,17 @@
-defmodule Humble.MixProject do
+defmodule Hallmark.MixProject do
   use Mix.Project
 
   @version "0.1.0"
-  @source_url "https://github.com/georgeguimaraes/humble"
+  @source_url "https://github.com/georgeguimaraes/hallmark"
 
   def project do
     [
-      app: :humble,
+      app: :hallmark,
       version: @version,
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      name: "Humble",
+      name: "Hallmark",
       description: "HHEM hallucination detection for Elixir",
       package: package(),
       source_url: @source_url

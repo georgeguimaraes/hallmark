@@ -5,6 +5,6 @@
 /.fetch
 erl_crash.dump
 *.ez
-humble-*.tar
+hallmark-*.tar
 /tmp/
 .elixir_ls/
