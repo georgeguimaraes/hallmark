@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/georgeguimaraes/hallmark/compare/v1.0.1...v1.1.0) (2026-03-04)
+
+
+### Features
+
+* configurable max_length for long context scoring ([08a8760](https://github.com/georgeguimaraes/hallmark/commit/08a87603972b35c90b7e3861bfb90d002df34109))
+
 ## [1.0.1](https://github.com/georgeguimaraes/hallmark/compare/v1.0.0...v1.0.1) (2026-03-03)
 
 
