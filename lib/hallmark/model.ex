@@ -9,7 +9,15 @@ defmodule Hallmark.Model do
   @hhem_repo "vectara/hallucination_evaluation_model"
   @base_repo "google/flan-t5-base"
 
-  defstruct [:model, :params, :tokenizer, :classifier_weight, :classifier_bias, :compiler]
+  defstruct [
+    :model,
+    :params,
+    :tokenizer,
+    :classifier_weight,
+    :classifier_bias,
+    :compiler,
+    max_length: 2048
+  ]
 
   @type t :: %__MODULE__{
           model: Axon.t(),
@@ -17,12 +25,14 @@ defmodule Hallmark.Model do
           tokenizer: term(),
           classifier_weight: Nx.Tensor.t(),
           classifier_bias: Nx.Tensor.t(),
-          compiler: module() | nil
+          compiler: module() | nil,
+          max_length: pos_integer()
         }
 
   @doc false
   def load(opts \\ []) do
     compiler = Keyword.get(opts, :compiler)
+    max_length = Keyword.get(opts, :max_length, 2048)
 
     with {:ok, spec} <- Bumblebee.load_spec({:hf, @base_repo}, architecture: :encoder),
          model <- Bumblebee.build_model(spec),
@@ -37,7 +47,8 @@ defmodule Hallmark.Model do
          tokenizer: tokenizer,
          classifier_weight: weight,
          classifier_bias: bias,
-         compiler: compiler
+         compiler: compiler,
+         max_length: max_length
        }}
     end
   end
@@ -66,7 +77,9 @@ defmodule Hallmark.Model do
         format_prompt(premise, hypothesis)
       end)
 
-    configured_tokenizer = Bumblebee.configure(tokenizer, length: 512, pad_direction: :right)
+    configured_tokenizer =
+      Bumblebee.configure(tokenizer, length: model_data.max_length, pad_direction: :right)
+
     inputs = Bumblebee.apply_tokenizer(configured_tokenizer, texts)
 
     predict_opts = if compiler, do: [compiler: compiler], else: []

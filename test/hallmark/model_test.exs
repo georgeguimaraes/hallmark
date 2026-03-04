@@ -56,6 +56,40 @@ defmodule Hallmark.ModelTest do
     end
   end
 
+  @long_premise """
+  The Sontarans were a humanoid race of belligerent and militaristic clones from the planet Sontar, created by the Kaveetch. They waged an eternal war throughout Mutter's Spiral against the Rutans, though they made no effort to change this nor did they want peace.
+
+  Biology
+
+  The Sontarans were humanoids with large, bulbous heads and short stocky bodies; humans who met them often compared them to "huge potatoes with ray guns". They had grey-brown skin and deep set features. Sontarans generally had three digits on each hand. Sontaran blood was mostly green, although it was occasionally red.
+
+  Valethske considered Sontaran flesh to be "notoriously tough" and tasteless.
+
+  In 2009, the Sontarans appeared as though they were losing the war against the Rutans. To counter this, General Staal led a contingent to Earth where they planned to convert the planet's atmosphere into clone feed using the ATMOS devices. The Tenth Doctor defeated this plan by igniting the atmosphere.
+
+  The Thirteenth Doctor once hid from an army of Sontarans in a cupboard. She later encountered them during the Flux event, where they attempted to conquer the Earth by manipulating time.
+  """
+
+  describe "long context scoring" do
+    test "scores entailed hypothesis correctly with long premise", %{model: model} do
+      hypothesis = "The Sontarans were clones from the planet Sontar."
+
+      {:ok, score} = Hallmark.score(model, @long_premise, hypothesis)
+
+      assert score > 0.5,
+             "Expected consistent for entailed hypothesis with long context, got: #{score}"
+    end
+
+    test "detects hallucination with long premise", %{model: model} do
+      hypothesis = "The Sontarans were peaceful traders from the planet Raxos."
+
+      {:ok, score} = Hallmark.score(model, @long_premise, hypothesis)
+
+      assert score < 0.5,
+             "Expected hallucinated for contradicted hypothesis, got: #{score}"
+    end
+  end
+
   describe "evaluate/3" do
     test "labels consistent pair correctly", %{model: model} do
       {:ok, label} = Hallmark.evaluate(model, "I am in California", "I am in United States.")

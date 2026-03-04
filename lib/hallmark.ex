@@ -20,6 +20,10 @@ defmodule Hallmark do
     * `:compiler` - Nx compiler for inference (e.g. `EXLA`). Without one, uses the
       default Nx.Defn evaluator which is very slow for transformer models.
 
+    * `:max_length` - Maximum token sequence length (default: `2048`). Increase if
+      premises exceed 2048 tokens; the underlying T5 model supports arbitrary lengths
+      via relative position biases.
+
   ## Examples
 
       {:ok, model} = Hallmark.load(compiler: EXLA)
