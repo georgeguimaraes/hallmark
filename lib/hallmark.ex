@@ -17,15 +17,48 @@ defmodule Hallmark do
 
   ## Options
 
-    * `:compiler` - Nx compiler for inference (e.g. `EXLA`). Without one, uses the
-      default Nx.Defn evaluator which is very slow for transformer models.
+    * `:compiler` - Nx compiler for inference (e.g. `EXLA`). Without one, uses
+      whatever `Nx.Defn.default_options/0` reports as the compiler. Setting the
+      defn options globally is the recommended approach — see "Backend and
+      compiler" below.
 
     * `:max_length` - Maximum token sequence length (default: `2048`). Increase if
       premises exceed 2048 tokens; the underlying T5 model supports arbitrary lengths
       via relative position biases.
 
+  ## Backend and compiler
+
+  Hallmark loads its weights via Bumblebee, which puts the tensors on whatever
+  `Nx.default_backend/0` reports. The forward pass at inference time runs via
+  `Axon.predict`, which uses `Nx.Defn.default_options/0` (or the explicit
+  `:compiler` option above) to JIT-compile the model.
+
+  These two settings **must agree**. If you load weights onto `EMLX.Backend`
+  (the global default on Apple Silicon) but pass `compiler: EXLA` to this
+  function, predict_batch will produce EXLA tensors from the encoder forward
+  pass and then try to matmul them with EMLX weights at the classifier head.
+  Nx refuses to mix backends and the call crashes.
+
+  The recommended setup is to declare both globally in your application
+  startup, then call `Hallmark.load/1` with no `:compiler`:
+
+      # In your application start callback
+      case :os.type() do
+        {:unix, :darwin} ->
+          Nx.global_default_backend({EMLX.Backend, device: :gpu})
+          Nx.Defn.default_options(compiler: EMLX)
+
+        _ ->
+          Nx.global_default_backend(EXLA.Backend)
+          Nx.Defn.default_options(compiler: EXLA)
+      end
+
+      # Then later
+      {:ok, model} = Hallmark.load()
+
   ## Examples
 
+      {:ok, model} = Hallmark.load()
       {:ok, model} = Hallmark.load(compiler: EXLA)
   """
   def load(opts \\ []) do
