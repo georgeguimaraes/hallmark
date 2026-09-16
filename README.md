@@ -13,8 +13,8 @@ HHEM is a fine-tuned FLAN-T5-base (184M params) that runs locally via Bumblebee.
 ```elixir
 def deps do
   [
-    {:hallmark, "~> 0.1.0"},
-    {:exla, "~> 0.9"}
+    {:hallmark, "~> 1.1"},
+    {:exla, "~> 1.0"}
   ]
 end
 ```
