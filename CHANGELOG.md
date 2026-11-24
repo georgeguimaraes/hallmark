@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/georgeguimaraes/hallmark/compare/v1.1.0...v1.1.1) (2026-11-24)
+
+
+### Bug Fixes
+
+* **deps:** Bump all dependencies ([c1ffd94](https://github.com/georgeguimaraes/hallmark/commit/c1ffd94462716eca41f969b58893c5faa02c6a4e))
+
 ## [1.1.0](https://github.com/georgeguimaraes/hallmark/compare/v1.0.1...v1.1.0) (2026-03-04)
 
 
